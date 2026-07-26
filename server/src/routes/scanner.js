@@ -2,10 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import Pass from "../models/Pass.js";
 import EntryLog from "../models/EntryLog.js";
-import { auth } from "../middleware/auth.js";
+
 
 const router = Router();
+import { auth, requireRole } from "../middleware/auth.js";
+
 router.use(auth);
+router.use(requireRole("security"));
 
 const codeSchema = z.object({ code: z.string().min(4), device: z.string().optional() });
 
@@ -14,7 +17,22 @@ router.post("/verify", async (req, res) => {
   const pass = await Pass.findOne({ passId: code });
   if (!pass) return res.status(404).json({ error: "Pass not found" });
   const now = new Date();
-  const expired = pass.validityDate && pass.validityDate < now;
+
+let expired = false;
+
+if (pass.validityDate) {
+  const expiry = new Date(pass.validityDate);
+
+  if (pass.expectedExitTime) {
+    const [hour, minute] = pass.expectedExitTime.split(":").map(Number);
+    expiry.setHours(hour, minute, 59, 999);
+  } else {
+    // If no exit time is provided, expire at the end of the day
+    expiry.setHours(23, 59, 59, 999);
+  }
+
+  expired = now > expiry;
+}
   res.json({
     pass,
     warnings: {
