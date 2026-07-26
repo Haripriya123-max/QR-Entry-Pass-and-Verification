@@ -50,7 +50,7 @@ function Scanner() {
   const stop = async () => {
     try {
       await scannerRef.current?.stop();
-      await scannerRef.current?.clear();
+      scannerRef.current?.clear();
     } catch {}
     setScanning(false);
   };
