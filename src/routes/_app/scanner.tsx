@@ -24,7 +24,6 @@ function Scanner() {
   useEffect(() => {
     return () => {
       scannerRef.current?.stop().catch(() => {});
-      scannerRef.current?.clear().catch(() => {});
     };
   }, []);
 
